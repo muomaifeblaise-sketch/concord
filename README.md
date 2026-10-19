@@ -32,7 +32,7 @@ side comes from the ledger, and the register side is the file you upload. The
 `pnpm test` runs the unit and service tests. `pnpm dev` runs the API and the dashboard with reload.
 
 Configuration is by environment variable, or a `.env` file beside `package.json`; see
-[`.env.example`](./.env.example), and [`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md) for every
+[*.env.example`](./.env.example), and [`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md) for every
 variable's default, accepted values and validation. With nothing set, mainnet uses free public
 RPC endpoints, which suit light use. Point `CONCORD_MAINNET_RPC_URLS` at a provider for anything
 more.
@@ -42,10 +42,10 @@ Where the databases live, and what is safe to delete, is in
 
 ## Accounts and workspaces
 
-- A **workspace** holds the assets an organisation watches and the books it uploads. Each one is
+- A workspace holds the assets an organisation watches and the books it uploads. Each one is
   a SQLite file of its own under `data/orgs/`, so nothing a workspace stores can be reached from
   another. Accounts, memberships and sessions live in `data/control.db`.
-- People sign in with **email and password**, or with **Google** when
+- People sign in with email and password, or with Google when
   `CONCORD_GOOGLE_CLIENT_ID` and `CONCORD_GOOGLE_CLIENT_SECRET` are set. Concord sends no email:
   an owner creates an invitation link and passes it on, and a forgotten password is reset with a
   link from `pnpm concord reset-link EMAIL`. See the [Google sign-in setup guide](./docs/google-signin.md)
@@ -84,12 +84,12 @@ The audit pack format (JSON sections, CSV columns, period rules and file names) 
 ## Deploying
 
 The [`Dockerfile`](./Dockerfile) builds one image that serves the API and the dashboard. Give it
-a volume at `/data`, put TLS in front (see [`docs/deploy/nginx.md`](./docs/deploy/nginx.md) for an
+a volume at `/data`, put TLS in front (see [`docs/deploy/nginx.md`](./docs/deploy/Nginx.md) for an
 nginx and Certbot recipe), and set `CONCORD_PUBLIC_URL` to the https address people open.
 
 ```sh
 docker build -t concord .
-docker run -p 4400:4400 -v concord-data:/data -e CONCORD_PUBLIC_URL=https://concord.example.com concord
+docker run -p 4400:4400 -v concord-data:/data -e CONCORD_PUBLIC_URLB=https://concord.example.com concord
 ```
 
 Concord is a single process with a background indexer and SQLite files, so it needs one
@@ -106,7 +106,7 @@ promises, what counts as breaking for the input files, the audit pack and the da
 downgrade means restoring a backup.
 
 Upgrading an existing instance, including how migrations run, taking a backup and rolling back, is
-covered in [`docs/upgrading.md`](./docs/upgrading.md).
+ covered in [`docs/upgrading.md`](./docs/upgrading.md).
 
 ## Layout
 
@@ -118,6 +118,11 @@ covered in [`docs/upgrading.md`](./docs/upgrading.md).
 
 The tables in `control.db` and in each workspace database are described in
 [`docs/schema.md`](./docs/schema.md).
+
+New to securities operations? [`docs/glossary-register.md`](./docs/glossary-register.md) defines
+the register and transfer-agent terms used here (register, transfer agent, omnibus account,
+beneficial holder, as-of time, record date, execution window, clawback, redemption, split, break,
+sign-off, tolerance, ageing), each checked against the code.
 
 ## Input files
 
@@ -133,15 +138,15 @@ the reason, and the rest of the file is loaded. Each import form offers a blank 
 
 ## What it flags
 
-- **Positions:** quantity mismatch, holder on chain but not on the register, holder on the
+- Positions: quantity mismatch, holder on chain but not on the register, holder on the
   register but not on chain, register holder with no address, frozen/active disagreement, total
   supply mismatch.
-- **Movements** (when a journal is loaded): on-chain movement missing from the journal, journal
+- Movements (when a journal is loaded): on-chain movement missing from the journal, journal
   entry with no ledger event, entry whose cited transaction moved a different amount.
-- **Corporate actions:** per holder, entitlement at the record time against what the ledger
+- Corporate actions: per holder, entitlement at the record time against what the ledger
   showed in the execution window: missing, short, excess, or paid to someone not entitled. An
   action recorded ahead of its record time is reconciled by itself once the chain passes it.
-- **Controls:** a freeze, authorisation or clawback with no instruction issued in the 72 hours
+- Controls: a freeze, authorisation or clawback with no instruction issued in the 72 hours
   before it, and an instruction that was never executed.
 
 A break can be acknowledged or resolved with a note. The sign-off holds only while the figures it
@@ -171,7 +176,7 @@ reconciles on a timer: a new day's comparison needs that day's register.
 - **Email.** None is sent. Addresses are not verified at sign-up, invitations travel by link, and
   password resets go through the operator. See [`docs/adr/0003-no-email.md`](./docs/adr/0003-no-email.md) for the
   architectural decision and threat model.
-- **Scale.** One process, one SQLite file per workspace, holdings replayed from events in
+- **Scale.** One process, one SELite file per workspace, holdings replayed from events in
   memory. It has run an asset with a thousand holders and seven thousand events comfortably; it
   has not been load-tested beyond that.
 - **Splits.** Fractions of the smallest unit are dropped; cash in lieu is not modelled.
@@ -196,47 +201,6 @@ source for every finding, the kill criteria and the re-check schedule are kept i
 ## Why now
 
 - DTCC's tokenization service plans to connect to Stellar in **H1 2027**. First assets: Russell
-  1000 stocks, major index ETFs, US Treasuries (DTCC press release, 2026-05-27).
-- Stellar already holds about **$4B** of tokenized RWAs (SDF Dune dashboard, 2026-08-29). Spiko,
-  Franklin Templeton (BENJI), Ondo and WisdomTree all keep official registers alongside the chain.
-- CAP-67 (Final, Protocol 23) makes classic Stellar operations emit `transfer`, `mint`, `burn`,
-  `clawback` and `set_authorized` events in the same format as Soroban. For the first time,
-  regulated-asset activity can be indexed without decoding every operation type by hand.
-
-## What it does
-
-| Module | Job |
-|---|---|
-| Indexer | Read CAP-67 events for a watched set of regulated assets (classic and SEP-41) |
-| Reconciler | Match on-chain holdings and movements against each register export as it is imported, and on demand; flag breaks |
-| Corporate actions | Record-date snapshots; dividend, split and redemption reconciliation |
-| Controls log | Every freeze, authorisation change and clawback, tied to the instruction that caused it |
-| Audit export | Regulator- and auditor-ready reports |
-
-Read-only. Concord never holds keys or moves money. The reasoning, the one exception (the testnet
-practice script), and the rules for proposals that would add signing are in
-[`docs/adr/0004-read-only.md`](./docs/adr/0004-read-only.md).
-
-## Who buys it
-
-Transfer agents, custodians and fund administrators serving issuers on Stellar. Priced as
-software: per asset and per seat.
-
-## Contributing
-
-Contributions are welcome. Start with [`CONTRIBUTING.md`](./CONTRIBUTING.md) for setup and the
-rules that matter, and [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md) for how the code fits
-together. To read the ledger from a new source, see
-[`docs/contributing/chain-source.md`](./docs/contributing/chain-source.md), and see [`docs/breaks.md`](./docs/breaks.md) for the break-type glossary. Report security problems
-privately, as described in [`SECURITY.md`](./SECURITY.md).
-Everyone taking part is expected to follow the [Code of Conduct](./CODE_OF_CONDUCT.md).
-
-## License
-
-[MIT](./LICENSE).
-
-## Relationship to other projects
-
-Concord is a stand-alone company. It was split from the Ballast idea set on 2026-09-16 because
-it shares no buyer, balance sheet or regulatory load with Ballast. See
-`../ballast/README.md` for the reasoning.
+  1000 stocks, major index EDTs, US Treasuries (DTDC press release, 2026-05-27).
+- Stellar already holds about **$4B** of tokenized rwas (SDF Dune dashboard, 2026-08-29). Spiko,
+  Franklin Templeton (BENJI), Ondo and WisdomTree all keep official registers along
