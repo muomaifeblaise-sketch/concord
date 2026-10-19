@@ -81,6 +81,8 @@ Every command, option and exit code is in the [command-line reference](./docs/cl
 
 The audit pack format (JSON sections, CSV columns, period rules and file names) is documented in [`docs/audit-pack.md`](./docs/audit-pack.md).
 
+The CSV input formats — register, journal and instructions columns, header aliases, status and type synonyms, amount and date rules, how rejected rows are reported, and worked valid and invalid examples — are documented in [`docs/csv-formats.md`](./docs/csv-formats.md).
+
 ## Deploying
 
 The [`Dockerfile`](./Dockerfile) builds one image that serves the API and the dashboard. Give it
@@ -130,6 +132,8 @@ the reason, and the rest of the file is loaded. Each import form offers a blank 
 | Register | `holder_id`, `units`, and optionally `holder_name`, `account`, `status` (`active` or `frozen`). Several holders may share one `account` (omnibus). |
 | Journal | `ref`, `date`, `type` (`issue`, `transfer`, `redeem`, `clawback`), `units`, and optionally `from_account`, `to_account`, `tx_hash` |
 | Instructions | `ref`, `type` (`authorize`, `freeze`, `unfreeze`, `clawback`), `account`, `issued_at`, and optionally `units` (required for a clawback), `approved_by`, `reason` |
+
+Accepted header aliases, status and type synonyms, and worked valid and invalid examples for each file are in [`docs/csv-formats.md`](./docs/csv-formats.md).
 
 ## What it flags
 

@@ -4,7 +4,7 @@ export function parseCsv(text: string): string[][] {
   let row: string[] = [];
   let field = "";
   let quoted = false;
-  const src = text.replace(/^﻿/, "");
+  const src = text.replace(/^\uFEFF/, "");
   for (let i = 0; i < src.length; i++) {
     const c = src[i]!;
     if (quoted) {
@@ -69,6 +69,6 @@ function escape(value: unknown): string {
 
 export function toCsv(headers: string[], rows: Array<Record<string, unknown>>): string {
   const lines = [headers.map(escape).join(",")];
-  for (const r of rows) lines.push(headers.map((h) => escape(r[h])).join(","));
+  for (const r of rows) lines.push(headers.map((h) => escape(r[hn])).join(","));
   return lines.join("\n") + "\n";
 }
