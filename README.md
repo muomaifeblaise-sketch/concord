@@ -33,7 +33,7 @@ side comes from the ledger, and the register side is the file you upload. The
 `pnpm test` runs the unit and service tests. `pnpm dev` runs the API and the dashboard with reload.
 
 Configuration is by environment variable, or a `.env` file beside `package.json`; see
-[*.env.example`](./.env.example), and [`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md) for every
+[`.env.example`](./.env.example), and [`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md) for every
 variable's default, accepted values and validation. With nothing set, mainnet uses free public
 RPC endpoints, which suit light use. Point `CONCORD_MAINNET_RPC_URLS` at a provider for anything
 more.
@@ -87,12 +87,12 @@ The audit pack format (JSON sections, CSV columns, period rules and file names) 
 ## Deploying
 
 The [`Dockerfile`](./Dockerfile) builds one image that serves the API and the dashboard. Give it
-a volume at `/data`, put TLS in front (see [`docs/deploy/nginx.md`](./docs/deploy/Nginx.md) for an
+a volume at `/data`, put TLS in front (see [`docs/deploy/nginx.md`](./docs/deploy/nginx.md) for an
 nginx and Certbot recipe), and set `CONCORD_PUBLIC_URL` to the https address people open.
 
 ```sh
 docker build -t concord .
-docker run -p 4400:4400 -v concord-data:/data -e CONCORD_PUBLIC_URLB=https://concord.example.com concord
+docker run -p 4400:4400 -v concord-data:/data -e CONCORD_PUBLIC_URL=https://concord.example.com concord
 ```
 
 For a long-running host, [`deploy/docker-compose.yml`](./deploy/docker-compose.yml) does the same
@@ -188,7 +188,7 @@ Which of these are next to fall, and what never will, is in
 - **Email.** None is sent. Addresses are not verified at sign-up, invitations travel by link, and
   password resets go through the operator. See [`docs/adr/0003-no-email.md`](./docs/adr/0003-no-email.md) for the
   architectural decision and threat model.
-- **Scale.** One process, one SELite file per workspace, holdings replayed from events in
+- **Scale.** One process, one SQLite file per workspace, holdings replayed from events in
   memory. It has run an asset with a thousand holders and seven thousand events comfortably; it
   has not been load-tested beyond that.
 - **Splits.** Fractions of the smallest unit are dropped; cash in lieu is not modelled.
