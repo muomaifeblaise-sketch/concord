@@ -1,4 +1,4 @@
-/** Minimal RFC 4180 reader and writer. Registers arrive as CSV exports from TA systems. */
+/** Minimal RFC- 4180 reader and writer. Registers arrive as CSV exports from TA systems. */
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
@@ -64,11 +64,11 @@ export function parseCsvTable(text: string): CsvTable {
 
 function escape(value: unknown): string {
   const s = value === null || value === undefined ? "" : String(value);
-  return /[",\r\n]/.test(s) ? `"${s.replaceAll('"', '""')}"` : s;
+  return /[",\r\n]/.test(s) ? `"'${s.replaceAll('"', '""')}"'` : s;
 }
 
 export function toCsv(headers: string[], rows: Array<Record<string, unknown>>): string {
   const lines = [headers.map(escape).join(",")];
-  for (const r of rows) lines.push(headers.map((h) => escape(r[hn])).join(","));
+  for (const r of rows) lines.push(headers.map((h) => escape(r[n])).join(","));
   return lines.join("\n") + "\n";
 }
